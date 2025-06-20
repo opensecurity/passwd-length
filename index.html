@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>passwd-length - Password Policy & Strength Analyzer</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description"
+        content="An advanced password policy and strength analyzer. Test your passwords against common compliance standards like NIST, PCI DSS, HIPAA, and more. Includes a secure passphrase generator.">
+    <meta name="keywords"
+        content="password strength, password tester, password policy, nist, pci dss, hipaa, iso 27001, cis, passphrase generator, security, compliance">
+    <link rel="canonical" href="https://opensecurity.github.io/passwd-length">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://opensecurity.github.io/passwd-length">
+    <meta property="og:title" content="passwd-length - Password Policy & Strength Analyzer">
+    <meta property="og:description"
+        content="An advanced password policy and strength analyzer. Test your passwords against common compliance standards like NIST, PCI DSS, HIPAA, and more. Includes a secure passphrase generator.">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://opensecurity.github.io/passwd-length">
+    <meta property="twitter:title" content="passwd-length - Password Policy & Strength Analyzer">
+    <meta property="twitter:description"
+        content="An advanced password policy and strength analyzer. Test your passwords against common compliance standards like NIST, PCI DSS, HIPAA, and more. Includes a secure passphrase generator.">
+
+    <style>
+        :root {
+            --color-background: #1a1d2e;
+            --color-surface: #2a2d3e;
+            --color-foreground: #e0e0e0;
+            --color-primary: #82aaff;
+            --color-secondary: #c792ea;
+            --color-success: #c3e88d;
+            --color-warning: #ffcb6b;
+            --color-danger: #f07178;
+            --color-border: #4a4f69;
+            --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-family-mono: "Fira Code", "Consolas", "Liberation Mono", "Menlo", monospace;
+            --border-radius: 12px;
+            --transition-speed: 0.4s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes background-pan {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes fade-in-out {
+
+            0%,
+            100% {
+                opacity: 0;
+            }
+
+            20%,
+            80% {
+                opacity: 1;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(45deg, var(--color-background), #1e2137, var(--color-background));
+            background-size: 200% 200%;
+            animation: background-pan 45s ease infinite, fadeIn 0.5s ease-out;
+            color: var(--color-foreground);
+            font-family: var(--font-family-sans);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 2rem;
+            min-height: 100%;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: minmax(320px, 1fr) 2fr;
+            grid-template-areas:
+                "header header"
+                "controls report"
+                "generator report"
+                "recommendations report";
+            gap: 2rem;
+            background-color: rgba(26, 29, 46, 0.7);
+            backdrop-filter: blur(15px);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--color-border);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
+        }
+
+        header {
+            grid-area: header;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        header h1 {
+            color: var(--color-primary);
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        header p {
+            color: var(--color-secondary);
+            font-size: 1.1rem;
+        }
+
+        .policy-controls {
+            grid-area: controls;
+        }
+
+        .generator {
+            grid-area: generator;
+        }
+
+        .recommendations {
+            grid-area: recommendations;
+        }
+
+        .analysis-report {
+            grid-area: report;
+        }
+
+        .control-group {
+            background: var(--color-surface);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--color-border);
+            margin-bottom: 2rem;
+        }
+
+        .control-group h3 {
+            margin: 0 0 1.2rem 0;
+            color: var(--color-secondary);
+            border-bottom: 1px solid var(--color-border);
+            padding-bottom: 0.5rem;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .form-row label {
+            font-weight: 500;
+        }
+
+        .form-row input[type="number"] {
+            width: 60px;
+            background: var(--color-background);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            color: var(--color-foreground);
+            padding: 0.5rem;
+            text-align: center;
+        }
+
+        .form-row input[type="checkbox"] {
+            width: 1.2rem;
+            height: 1.2rem;
+            accent-color: var(--color-primary);
+        }
+
+        .input-with-copy {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .copy-button {
+            background: none;
+            border: none;
+            color: var(--color-foreground);
+            cursor: pointer;
+            padding: 0.5rem;
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.6;
+            transition: opacity var(--transition-speed);
+        }
+
+        .copy-button:hover {
+            opacity: 1;
+        }
+
+        .copy-button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .copy-button .copied-feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--color-success);
+            font-weight: bold;
+            font-size: 0.8rem;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .copy-button.copied .copied-feedback {
+            animation: fade-in-out 1.5s ease-out;
+        }
+
+        .copy-button.copied svg {
+            opacity: 0;
+        }
+
+        #password-input {
+            width: 100%;
+            padding: 1rem;
+            padding-right: 3rem;
+            font-family: var(--font-family-mono);
+            font-size: 1.1rem;
+            background: var(--color-background);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius);
+            color: var(--color-primary);
+        }
+
+        .generator-toggle {
+            display: flex;
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .toggle-button {
+            flex: 1;
+            padding: 0.5rem;
+            background-color: transparent;
+            border: none;
+            color: var(--color-foreground);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color var(--transition-speed);
+        }
+
+        .toggle-button.active {
+            background-color: var(--color-primary);
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .generator-options {
+            border-top: 1px solid var(--color-border);
+            margin-top: 1rem;
+            padding-top: 1rem;
+        }
+
+        .generated-password-container {
+            position: relative;
+        }
+
+        #generated-password {
+            font-family: var(--font-family-mono);
+            font-size: 1.1rem;
+            color: var(--color-success);
+            background-color: var(--color-background);
+            padding: 1rem 3rem 1rem 1rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            margin-bottom: 1rem;
+            word-wrap: break-word;
+        }
+
+        #generate-button {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: var(--color-primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color var(--transition-speed);
+            margin-top: 1rem;
+        }
+
+        #generate-button:hover {
+            background-color: #6a95f7;
+        }
+
+        .recommendations ul {
+            padding-left: 1.5rem;
+        }
+
+        .analysis-report {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .strength-meter {
+            background: var(--color-surface);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .strength-bar-container {
+            background: var(--color-background);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            height: 10px;
+            margin-bottom: 1rem;
+        }
+
+        #strength-bar {
+            height: 100%;
+            width: 0;
+            transition: width 0.5s ease, background-color 0.5s ease;
+        }
+
+        #strength-text {
+            margin: 0;
+            font-weight: bold;
+            font-size: 1.2rem;
+            transition: color 0.5s ease;
+        }
+
+        #crack-time {
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: block;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .report-card {
+            background: var(--color-surface);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--color-border);
+        }
+
+        .report-card h4 {
+            margin: 0 0 1rem 0;
+            color: var(--color-secondary);
+        }
+
+        .report-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .report-card li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .report-card .icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .report-card .icon.pass {
+            color: var(--color-success);
+        }
+
+        .report-card .icon.fail {
+            color: var(--color-danger);
+        }
+
+        .report-card .icon.info {
+            color: var(--color-primary);
+        }
+
+        footer {
+            text-align: center;
+            padding: 1rem;
+            color: var(--color-foreground);
+            opacity: 0.6;
+        }
+
+        footer a {
+            color: var(--color-primary);
+            text-decoration: none;
+            transition: color var(--transition-speed);
+        }
+
+        footer a:hover {
+            color: var(--color-secondary);
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        @media (max-width: 1024px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-areas: "header" "controls" "generator" "recommendations" "report";
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>passwd-length</h1>
+            <p>Test password strength and compliance against modern security standards.</p>
+        </header>
+
+        <section class="policy-controls">
+            <div class="control-group">
+                <h3>Policy Rules</h3>
+                <div class="form-row"> <label for="minLength">Min Length</label> <input type="number" id="minLength"
+                        value="12" min="1"> </div>
+                <div class="form-row"> <label for="maxLength">Max Length</label> <input type="number" id="maxLength"
+                        value="64" min="1"> </div>
+                <div class="form-row"> <label for="reqUpper">Require Uppercase</label> <input type="checkbox"
+                        id="reqUpper" checked> </div>
+                <div class="form-row"> <label for="reqLower">Require Lowercase</label> <input type="checkbox"
+                        id="reqLower" checked> </div>
+                <div class="form-row"> <label for="reqNumber">Require Numbers</label> <input type="checkbox"
+                        id="reqNumber" checked> </div>
+                <div class="form-row"> <label for="reqSymbol">Require Symbols</label> <input type="checkbox"
+                        id="reqSymbol" checked> </div>
+            </div>
+            <div class="control-group">
+                <h3>Test Password</h3>
+                <div class="input-with-copy">
+                    <input type="password" id="password-input" placeholder="Enter password to analyze...">
+                    <button class="copy-button" id="copy-test-password-button" title="Copy password">
+                        <svg viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                                d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM5 11a1 1 0 100 2h4a1 1 0 100-2H5z">
+                            </path>
+                        </svg>
+                        <span class="copied-feedback">Copied!</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="generator">
+            <div class="control-group">
+                <h3>Secure Password Generator</h3>
+                <div class="generator-toggle">
+                    <button id="toggle-passphrase" class="toggle-button active">Passphrase</button>
+                    <button id="toggle-random" class="toggle-button">Random Password</button>
+                </div>
+                <div class="generated-password-container">
+                    <p id="generated-password">Click below to generate</p>
+                    <button class="copy-button" id="copy-generated-password-button" title="Copy password">
+                        <svg viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                                d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM5 11a1 1 0 100 2h4a1 1 0 100-2H5z">
+                            </path>
+                        </svg>
+                        <span class="copied-feedback">Copied!</span>
+                    </button>
+                </div>
+                <div id="passphrase-options">
+                    <div class="form-row"> <label for="genNumWords">Number of words</label> <input type="number"
+                            id="genNumWords" value="5" min="3" max="8"> </div>
+                    <div class="form-row"> <label for="genAddNumber">Add a number</label> <input type="checkbox"
+                            id="genAddNumber" checked> </div>
+                    <div class="form-row"> <label for="genAddSymbol">Add a symbol</label> <input type="checkbox"
+                            id="genAddSymbol" checked> </div>
+                </div>
+                <div id="random-options" class="hidden">
+                    <div class="form-row"> <label for="genLength">Password Length</label> <input type="number"
+                            id="genLength" value="22" min="12" max="124"> </div>
+                </div>
+                <button id="generate-button">Generate New Password</button>
+            </div>
+        </section>
+
+        <section class="recommendations">
+            <div class="control-group">
+                <h3>Security Best Practices</h3>
+                <ul>
+                    <li><strong>Use a Password Manager:</strong> Store unique, complex passwords for every site.</li>
+                    <li><strong>Enable 2FA/MFA:</strong> Always enable Two-Factor or Multi-Factor Authentication for a
+                        critical layer of security.</li>
+                    <li><strong>Beware of Phishing:</strong> Never enter your password on a site from an unsolicited
+                        email or message.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="analysis-report" id="analysis-report">
+            <div class="strength-meter">
+                <div class="strength-bar-container">
+                    <div id="strength-bar"></div>
+                </div>
+                <p id="strength-text">Awaiting Input</p>
+                <p id="crack-time">Time to crack: -</p>
+            </div>
+            <div class="report-grid">
+                <div class="report-card">
+                    <h4>Password Analysis</h4>
+                    <ul id="properties-list"></ul>
+                </div>
+                <div class="report-card">
+                    <h4>NIST 800-63B</h4>
+                    <ul id="nist-compliance-list"></ul>
+                </div>
+                <div class="report-card">
+                    <h4>PCI DSS 4.0</h4>
+                    <ul id="pci-compliance-list"></ul>
+                </div>
+                <div class="report-card">
+                    <h4>HIPAA</h4>
+                    <ul id="hipaa-compliance-list"></ul>
+                </div>
+                <div class="report-card">
+                    <h4>ISO/IEC 27001</h4>
+                    <ul id="iso-compliance-list"></ul>
+                </div>
+                <div class="report-card">
+                    <h4>CIS Benchmark</h4>
+                    <ul id="cis-compliance-list"></ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <a href="https://github.com/opensecurity/passwd-length" target="_blank" rel="noopener noreferrer">View Project
+            on GitHub</a>
+        <span class="visually-hidden">Author: Lucian BLETAN</span>
+    </footer>
+
+    <script>
+        'use strict';
+        (() => {
+            const el = id => document.getElementById(id);
+            const controls = {
+                minLength: el('minLength'), maxLength: el('maxLength'),
+                reqUpper: el('reqUpper'), reqLower: el('reqLower'),
+                reqNumber: el('reqNumber'), reqSymbol: el('reqSymbol'),
+                passwordInput: el('password-input'), generateButton: el('generate-button'),
+                copyTestButton: el('copy-test-password-button'),
+                copyGeneratedButton: el('copy-generated-password-button'),
+                togglePassphrase: el('toggle-passphrase'), toggleRandom: el('toggle-random'),
+                passphraseOptions: el('passphrase-options'), randomOptions: el('random-options'),
+                genNumWords: el('genNumWords'), genAddNumber: el('genAddNumber'),
+                genAddSymbol: el('genAddSymbol'),
+                genLength: el('genLength'),
+            };
+            const report = {
+                strengthBar: el('strength-bar'), strengthText: el('strength-text'),
+                crackTime: el('crack-time'),
+                propertiesList: el('properties-list'), nistList: el('nist-compliance-list'),
+                pciList: el('pci-compliance-list'), hipaaList: el('hipaa-compliance-list'),
+                isoList: el('iso-compliance-list'), cisList: el('cis-compliance-list'),
+                generatedPassword: el('generated-password'),
+            };
+
+            const COMMON_PASSWORDS = new Set(['123456', 'password', '12345678', '123456789', 'qwerty', '111111', 'admin', 'welcome', 'password123']);
+            const WORD_LIST = ["ability", "able", "about", "above", "accept", "accord", "account", "across", "action", "active", "actual", "adapt", "add", "address", "admit", "adopt", "affair", "affect", "afford", "after", "again", "against", "age", "agency", "agent", "ago", "agree", "ahead", "aim", "air", "all", "allow", "almost", "alone", "along", "already", "also", "although", "always", "amaze", "among", "amount", "analyse", "and", "animal", "another", "answer", "any", "appear", "apply", "approach", "approve", "area", "argue", "arm", "around", "arrive", "art", "article", "artist", "as", "ask", "assume", "at", "attack", "attend", "attract", "author", "avoid", "away", "baby", "back", "bad", "bag", "balance", "ball", "bank", "bar", "base", "be", "bear", "beat", "because", "become", "bed", "before", "begin", "behave", "behind", "believe", "benefit", "best", "bet", "between", "beyond", "big", "bill", "birth", "bit", "black", "block", "blood", "blow", "blue", "board", "body", "book", "both", "bother", "bottle", "box", "boy", "break", "bring", "brother", "budget", "build", "burn", "bus", "business", "but", "buy", "by", "call", "camp", "can", "car", "card", "care", "carry", "case", "cat", "catch", "cause", "cell", "centre", "certain", "chair", "chance", "change", "charge", "check", "child", "choice", "choose", "church", "city", "claim", "class", "clean", "clear", "client", "climb", "close", "club", "coach", "coal", "coast", "code", "coffee", "cold", "collect", "college", "colour", "come", "comment", "commit", "common", "compare", "compete", "comply", "compute", "concern", "condemn", "confer", "confirm", "connect", "consider", "consist", "consult", "consume", "contact", "contain", "contend", "context", "control", "convey", "cook", "copy", "core", "cost", "could", "council", "count", "country", "couple", "course", "court", "cover", "create", "credit", "crime", "cross", "crowd", "cry", "cup", "current", "custom", "cut", "dad", "danger", "dark", "data", "date", "day", "dead", "deal", "death", "debate", "decide", "declare", "deep", "defend", "define", "degree", "delay", "demand", "depend", "deposit", "derive", "descend", "design", "desire", "destroy", "detail", "develop", "device", "die", "differ", "direct", "discuss", "display", "divide", "do", "doctor", "document", "dog", "door", "double", "doubt", "down", "draw", "dream", "dress", "drink", "drive", "drop", "drug", "due", "during", "each", "early", "earth", "east", "easy", "eat", "economy", "edge", "educate", "effect", "effort", "eight", "either", "elect", "electric", "eleven", "else", "employ", "enable", "encourage", "end", "engine", "enjoy", "enough", "ensure", "enter", "envy", "equal", "escape", "even", "event", "ever", "every", "evidence", "examine", "example", "exchange", "excite", "exclude", "excuse", "execute", "exercise", "exist", "expect", "expense", "explain", "express", "extend", "extra", "face", "fact", "fail", "fall", "family", "far", "farm", "fast", "father", "favour", "fear", "feature", "feel", "few", "field", "fight", "figure", "file", "fill", "film", "final", "finance", "find", "fine", "finish", "fire", "firm", "first", "fish", "fit", "five", "flat", "flight", "floor", "focus", "follow", "food", "foot", "for", "force", "foreign", "forget", "form", "fortune", "forward", "four", "free", "fresh", "friend", "from", "front", "fruit", "fuel", "full", "fun", "fund", "future", "gain", "game", "gas", "gate", "gather", "general", "generate", "get", "girl", "give", "glass", "go", "goal", "god", "gold", "good", "govern", "grant", "great", "green", "grey", "ground", "group", "grow", "guess", "guide", "gun", "guy", "hair", "half", "hall", "hand", "hang", "happen", "happy", "hard", "have", "he", "head", "health", "hear", "heart", "heat", "heavy", "help", "her", "here", "high", "history", "hit", "hold", "home", "hope", "horse", "hospital", "hot", "hour", "house", "how", "however", "huge", "human", "hundred", "husband", "idea", "identify", "if", "image", "imagine", "impact", "imply", "import", "improve", "in", "include", "increase", "indeed", "indicate", "industry", "inform", "initial", "injure", "involve", "iron", "island", "issue", "it", "item", "join", "joint", "journey", "judge", "jump", "just", "keep", "key", "kid", "kill", "kind", "king", "kitchen", "knock", "know", "labour", "lad", "lady", "land", "language", "large", "last", "late", "laugh", "launch", "law", "lead", "leader", "learn", "leave", "leg", "legal", "less", "let", "letter", "level", "lie", "life", "light", "like", "limit", "line", "link", "lip", "list", "listen", "little", "live", "load", "local", "lock", "long", "look", "lord", "lose", "lot", "love", "low", "luck", "lunch", "machine", "main", "major", "make", "man", "manage", "many", "map", "mark", "market", "marry", "match", "matter", "may", "maybe", "mean", "meaning", "measure", "meet", "member", "mention", "mere", "middle", "might", "mile", "milk", "million", "mind", "minister", "minus", "miss", "mission", "mistake", "mix", "model", "modern", "moment", "money", "month", "more", "morning", "most", "mother", "motor", "mountain", "mouth", "move", "much", "music", "must", "my", "name", "nation", "nature", "near", "necessary", "need", "never", "new", "news", "next", "nice", "night", "nine", "no", "non", "none", "normal", "north", "not", "note", "nothing", "notice", "now", "number", "obvious", "occur", "of", "off", "offer", "office", "often", "oil", "ok", "old", "on", "once", "one", "only", "open", "operate", "opponent", "opportunity", "oppose", "or", "order", "organize", "original", "other", "ought", "out", "outside", "over", "own", "pack", "page", "paint", "pair", "paper", "parent", "park", "part", "partner", "party", "pass", "past", "pattern", "pay", "peace", "people", "per", "perform", "period", "person", "phone", "pick", "picture", "piece", "pig", "pipe", "place", "plan", "plane", "plant", "play", "plus", "point", "police", "policy", "politic", "pool", "poor", "populate", "position", "positive", "possible", "post", "power", "practice", "prepare", "presence", "present", "press", "prevent", "price", "print", "private", "probable", "problem", "proceed", "process", "produce", "product", "profess", "progress", "project", "promise", "promote", "proper", "propose", "protect", "prove", "provide", "public", "pull", "purpose", "push", "put", "quality", "quarter", "question", "quick", "quiet", "quite", "race", "radio", "raise", "range", "rate", "reach", "read", "ready", "real", "realise", "reason", "receive", "recent", "reckon", "recognize", "recommend", "record", "red", "reduce", "refer", "reflect", "refuse", "regard", "region", "relate", "release", "rely", "remain", "remember", "remove", "repeat", "replace", "reply", "report", "represent", "require", "research", "resource", "respect", "respond", "rest", "result", "return", "reveal", "reverse", "review", "ride", "right", "ring", "rise", "road", "role", "roll", "room", "round", "row", "royal", "rule", "run", "safe", "sail", "salt", "same", "sand", "satellite", "satisfy", "save", "say", "scale", "scene", "scheme", "school", "science", "score", "sea", "search", "season", "seat", "second", "secret", "section", "secure", "see", "seek", "seem", "seize", "sell", "send", "sense", "separate", "serious", "serve", "service", "set", "settle", "seven", "sex", "shake", "shall", "share", "she", "sheet", "ship", "shoe", "shoot", "shop", "short", "should", "shout", "show", "shut", "sick", "side", "sign", "signal", "silence", "silly", "simple", "since", "sing", "single", "sir", "sister", "sit", "site", "situation", "six", "size", "skill", "skin", "sleep", "slight", "slip", "slow", "small", "smell", "smile", "so", "social", "society", "soft", "soil", "solid", "solve", "some", "son", "soon", "sorry", "sort", "sound", "source", "south", "space", "speak", "special", "specific", "speed", "spell", "spend", "spirit", "spite", "split", "sport", "spot", "spread", "spring", "staff", "stage", "stand", "standard", "star", "start", "state", "station", "stay", "step", "stick", "still", "stock", "stone", "stop", "store", "story", "straight", "strange", "strategy", "street", "stress", "stretch", "strike", "strong", "structure", "struggle", "student", "study", "stuff", "style", "subject", "succeed", "such", "sudden", "suffer", "suggest", "suit", "summer", "sun", "supply", "support", "suppose", "sure", "surprise", "surround", "swim", "system", "table", "take", "talk", "tape", "target", "task", "tax", "tea", "teach", "team", "tear", "technical", "telephone", "television", "tell", "ten", "tend", "term", "test", "than", "thank", "that", "the", "then", "there", "therefore", "these", "they", "thick", "thin", "thing", "think", "third", "this", "those", "though", "thought", "thousand", "three", "through", "throw", "thus", "ticket", "time", "to", "today", "together", "tomorrow", "tonight", "too", "top", "total", "touch", "toward", "town", "track", "trade", "traffic", "train", "transport", "travel", "treat", "tree", "trial", "trip", "trouble", "true", "trust", "try", "turn", "twelve", "twenty", "two", "type", "under", "understand", "union", "unit", "unite", "university", "unless", "until", "up", "upon", "use", "usual", "value", "various", "very", "video", "view", "village", "violence", "visit", "voice", "vote", "wait", "walk", "wall", "want", "war", "warm", "warn", "wash", "watch", "water", "wave", "way", "we", "weak", "wear", "weather", "web", "week", "weigh", "welcome", "well", "west", "what", "when", "where", "whether", "which", "while", "white", "who", "whole", "why", "wide", "wife", "will", "win", "wind", "window", "wine", "wing", "winter", "wish", "with", "within", "without", "woman", "wonder", "wood", "word", "work", "world", "worry", "worth", "would", "write", "wrong", "yard", "yeah", "year", "yes", "yet", "you", "young",];
+
+            let generatorMode = 'passphrase';
+
+            const secureRandom = (max) => {
+                const randomValues = new Uint32Array(1);
+                window.crypto.getRandomValues(randomValues);
+                return randomValues[0] % max;
+            };
+
+            const analyzePassword = () => {
+                const password = controls.passwordInput.value;
+                if (!password) {
+                    resetReport();
+                    return;
+                }
+
+                const hasLower = /[a-z]/.test(password);
+                const hasUpper = /[A-Z]/.test(password);
+                const hasNumber = /\d/.test(password);
+                const hasSymbol = /[^\w\s]/.test(password);
+
+                let charPool = 0;
+                if (hasLower) charPool += 26;
+                if (hasUpper) charPool += 26;
+                if (hasNumber) charPool += 10;
+                if (hasSymbol) charPool += 32;
+
+                const entropy = password.length * Math.log2(charPool || 1);
+
+                const isCommon = COMMON_PASSWORDS.has(password.toLowerCase());
+                const hasRepeats = /(.)\1{2,}/.test(password);
+                const hasSequence = /123|abc|qwe/i.test(password);
+
+                let score = 0;
+                if (password.length >= 8) score += 20;
+                if (password.length >= 12) score += 20;
+                if (password.length >= 16) score += 20;
+                if (charPool > 50) score += 20;
+                if (charPool > 70) score += 20;
+                if (isCommon) score = 0;
+                if (hasRepeats) score -= 20;
+                if (hasSequence) score -= 20;
+
+                score = Math.max(0, Math.min(100, score));
+
+                renderReport({ password, entropy, score, hasLower, hasUpper, hasNumber, hasSymbol, isCommon, hasRepeats, hasSequence });
+            };
+
+            const renderReport = (data) => {
+                const { password, entropy, score, hasLower, hasUpper, hasNumber, hasSymbol, isCommon, hasRepeats, hasSequence } = data;
+
+                report.strengthBar.style.width = `${score}%`;
+                const strengthLevels = ['Very Weak', 'Weak', 'Okay', 'Strong', 'Very Strong'];
+                const strengthColors = ['var(--color-danger)', 'var(--color-danger)', 'var(--color-warning)', 'var(--color-success)', 'var(--color-primary)'];
+                const level = Math.floor(score / 25);
+                report.strengthBar.style.backgroundColor = strengthColors[level];
+                report.strengthText.style.color = strengthColors[level];
+                report.strengthText.textContent = strengthLevels[level];
+
+                report.crackTime.textContent = `Time to crack: ${estimateCrackTime(entropy)}`;
+
+                const createIcon = (status) => {
+                    const icons = {
+                        pass: { color: 'pass', path: 'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' },
+                        fail: { color: 'fail', path: 'M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' },
+                        info: { color: 'info', path: 'M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z' }
+                    };
+                    return `<svg class="icon ${icons[status].color}" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="${icons[status].path}" clip-rule="evenodd" /></svg>`;
+                };
+                const renderListItem = (text, status) => `<li>${createIcon(status)}<span>${text}</span></li>`;
+
+                report.propertiesList.innerHTML = [
+                    renderListItem(`Password length is ${password.length}`, password.length >= 12 ? 'pass' : 'fail'),
+                    renderListItem(`Not a common password`, !isCommon ? 'pass' : 'fail'),
+                    renderListItem(`No simple keyboard patterns`, !hasSequence ? 'pass' : 'fail'),
+                    renderListItem(`No repeating characters (e.g., 'aaa')`, !hasRepeats ? 'pass' : 'fail'),
+                ].join('');
+
+                const compliance = { length8: password.length >= 8, length12: password.length >= 12, length14: password.length >= 14, complexPCI: hasNumber && (hasUpper || hasLower), complexCIS: hasLower && hasUpper && hasNumber && hasSymbol, notCommon: !isCommon };
+
+                report.nistList.innerHTML = [renderListItem('Min 8 characters (12+ recommended)', compliance.length8 ? 'pass' : 'fail'), renderListItem('Screened against common passwords', compliance.notCommon ? 'pass' : 'fail'), renderListItem('No complexity requirements enforced', 'info')].join('');
+                report.pciList.innerHTML = [renderListItem('Min 12 characters', compliance.length12 ? 'pass' : 'fail'), renderListItem('Contains numbers and letters', compliance.complexPCI ? 'pass' : 'fail'), renderListItem('Must be changed every 90 days*', 'info')].join('');
+                report.hipaaList.innerHTML = [renderListItem('Unique username/ID assumed', 'info'), renderListItem('Safeguarded (e.g., not written down)', 'info'), renderListItem('Min 8 characters recommended', compliance.length8 ? 'pass' : 'fail')].join('');
+                report.isoList.innerHTML = [renderListItem('Min 8 characters recommended', compliance.length8 ? 'pass' : 'fail'), renderListItem('Complexity (all types) recommended', hasLower && hasUpper && hasNumber && hasSymbol ? 'pass' : 'fail'), renderListItem('No personal information (user input)', 'info')].join('');
+                report.cisList.innerHTML = [renderListItem('Min 14 characters', compliance.length14 ? 'pass' : 'fail'), renderListItem('Contains uppercase character', hasUpper ? 'pass' : 'fail'), renderListItem('Contains lowercase character', hasLower ? 'pass' : 'fail'), renderListItem('Contains number', hasNumber ? 'pass' : 'fail'), renderListItem('Contains special character', hasSymbol ? 'pass' : 'fail')].join('');
+            };
+
+            const estimateCrackTime = (entropy) => {
+                const guessesPerSecond = 1e12; // 1 trillion guesses/sec
+                const seconds = (2 ** entropy) / guessesPerSecond;
+                if (seconds < 60) return 'Instant';
+                if (seconds < 3600) return `${Math.round(seconds / 60)} minutes`;
+                if (seconds < 86400) return `${Math.round(seconds / 3600)} hours`;
+                if (seconds < 31536000) return `${Math.round(seconds / 86400)} days`;
+                return 'Centuries';
+            };
+
+            const copyToClipboard = (textToCopy, buttonElement) => {
+                if (!textToCopy) return;
+                const textarea = document.createElement('textarea');
+                textarea.value = textToCopy;
+                textarea.style.position = 'absolute';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    buttonElement.classList.add('copied');
+                    setTimeout(() => buttonElement.classList.remove('copied'), 1500);
+                } catch (err) {
+                    console.error('Failed to copy text', err);
+                }
+                document.body.removeChild(textarea);
+            };
+
+            const generatePassphrase = () => {
+                const numWords = parseInt(controls.genNumWords.value, 10);
+                const addNumber = controls.genAddNumber.checked;
+                const addSymbol = controls.genAddSymbol.checked;
+                const separator = '-';
+
+                const words = [];
+                for (let i = 0; i < numWords; i++) {
+                    let word = WORD_LIST[secureRandom(WORD_LIST.length)];
+                    words.push(word);
+                }
+                let passphrase = words.join(separator);
+
+                if (addNumber) {
+                    passphrase += secureRandom(100);
+                }
+                if (addSymbol) {
+                    const symbols = '!@#$%^&*';
+                    passphrase += symbols[secureRandom(symbols.length)];
+                }
+
+                return passphrase;
+            };
+
+            const generateRandomPassword = () => {
+                const length = parseInt(controls.genLength.value, 10);
+                const policy = {
+                    upper: controls.reqUpper.checked,
+                    lower: controls.reqLower.checked,
+                    number: controls.reqNumber.checked,
+                    symbol: controls.reqSymbol.checked,
+                };
+
+                const charSets = {
+                    upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                    lower: 'abcdefghijklmnopqrstuvwxyz',
+                    number: '0123456789',
+                    symbol: '!@#$%^&*',
+                };
+
+                let password = '';
+                let availableChars = '';
+
+                if (policy.upper) { password += charSets.upper[secureRandom(charSets.upper.length)]; availableChars += charSets.upper; }
+                if (policy.lower) { password += charSets.lower[secureRandom(charSets.lower.length)]; availableChars += charSets.lower; }
+                if (policy.number) { password += charSets.number[secureRandom(charSets.number.length)]; availableChars += charSets.number; }
+                if (policy.symbol) { password += charSets.symbol[secureRandom(charSets.symbol.length)]; availableChars += charSets.symbol; }
+
+                if (availableChars === '') { availableChars = charSets.lower + charSets.upper + charSets.number; }
+
+                for (let i = password.length; i < length; i++) {
+                    password += availableChars[secureRandom(availableChars.length)];
+                }
+
+                const randomSort = new Uint8Array(password.length);
+                window.crypto.getRandomValues(randomSort);
+                return password.split('').sort((a, b) => randomSort[a.charCodeAt(0) % password.length] - randomSort[b.charCodeAt(0) % password.length]).join('');
+            };
+
+            const handleGenerate = () => {
+                const newPassword = generatorMode === 'passphrase' ? generatePassphrase() : generateRandomPassword();
+                report.generatedPassword.textContent = newPassword;
+                controls.passwordInput.value = newPassword;
+                analyzePassword();
+            };
+
+            const resetReport = () => {
+                report.strengthBar.style.width = '0%';
+                report.strengthText.textContent = 'Awaiting Input';
+                report.strengthText.style.color = 'var(--color-foreground)';
+                report.propertiesList.innerHTML = '';
+                report.nistList.innerHTML = ''; report.pciList.innerHTML = '';
+                report.hipaaList.innerHTML = ''; report.isoList.innerHTML = ''; report.cisList.innerHTML = '';
+                report.crackTime.textContent = 'Time to crack: -';
+            };
+
+            controls.passwordInput.addEventListener('input', analyzePassword);
+            controls.generateButton.addEventListener('click', handleGenerate);
+
+            controls.togglePassphrase.addEventListener('click', () => {
+                generatorMode = 'passphrase';
+                controls.togglePassphrase.classList.add('active');
+                controls.toggleRandom.classList.remove('active');
+                controls.passphraseOptions.classList.remove('hidden');
+                controls.randomOptions.classList.add('hidden');
+            });
+            controls.toggleRandom.addEventListener('click', () => {
+                generatorMode = 'random';
+                controls.toggleRandom.classList.add('active');
+                controls.togglePassphrase.classList.remove('active');
+                controls.randomOptions.classList.remove('hidden');
+                controls.passphraseOptions.classList.add('hidden');
+            });
+
+            controls.copyTestButton.addEventListener('click', () => copyToClipboard(controls.passwordInput.value, controls.copyTestButton));
+            controls.copyGeneratedButton.addEventListener('click', () => copyToClipboard(report.generatedPassword.textContent, controls.copyGeneratedButton));
+
+            handleGenerate();
+        })();
+    </script>
+</body>
+
+</html>
